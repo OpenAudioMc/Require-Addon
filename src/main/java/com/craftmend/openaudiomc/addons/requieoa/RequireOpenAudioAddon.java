@@ -7,6 +7,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.*;
 import org.bukkit.event.entity.EntityEvent;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.plugin.RegisteredListener;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -93,6 +94,13 @@ public final class RequireOpenAudioAddon extends JavaPlugin implements Listener 
         try {
             HandlerList list = (HandlerList) event.getDeclaredMethod("getHandlerList").invoke(null);
             list.register(new RegisteredListener(this, (listener, event1) -> {
+
+                if (event1 instanceof PlayerCommandPreprocessEvent) {
+                    if (((PlayerCommandPreprocessEvent) event1).getMessage().equals("/audio")) {
+                        // ignore
+                        return;
+                    }
+                }
 
                 if (event1 instanceof Cancellable) {
                     if (event1 instanceof PlayerEvent) {
