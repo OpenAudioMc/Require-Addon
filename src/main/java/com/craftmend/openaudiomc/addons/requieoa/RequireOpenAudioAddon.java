@@ -8,17 +8,19 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.*;
 import org.bukkit.event.entity.EntityEvent;
 import org.bukkit.event.player.PlayerEvent;
-import org.bukkit.plugin.EventExecutor;
 import org.bukkit.plugin.RegisteredListener;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 
 public final class RequireOpenAudioAddon extends JavaPlugin implements Listener {
 
+    private Map<Class, PlayerMethod> playerMethodCache = new HashMap<>();
     private Set<Class<?>> supportedTypes = new HashSet<>();
     private boolean requireVc = false;
 
@@ -76,30 +78,45 @@ public final class RequireOpenAudioAddon extends JavaPlugin implements Listener 
 
     private boolean registerEvent(Class<? extends Event> event) {
         if (!supportedTypes.contains(event.getSuperclass())) {
-            getLogger().log(Level.SEVERE, "Couldn't register " + event.getSimpleName() + " because it isn't a supported event.");
-            return false;
+            // check if we can handle it with reflection regardless
+            PlayerMethod playerMethod = new PlayerMethod(event);
+
+            if (playerMethod.isAvailible()) {
+                playerMethodCache.put(event, playerMethod);
+            } else {
+                getLogger().log(Level.SEVERE, "Couldn't register " + event.getSimpleName() + " because it isn't a supported event.");
+                return false;
+            }
         }
 
         // get the handler
         try {
             HandlerList list = (HandlerList) event.getDeclaredMethod("getHandlerList").invoke(null);
-            list.register(new RegisteredListener(this, new EventExecutor() {
-                @Override
-                public void execute(Listener listener, Event event) throws EventException {
-                    if (event instanceof Cancellable) {
-                        if (event instanceof PlayerEvent) {
-                            if (shouldBeCanceled(((PlayerEvent) event).getPlayer())) {
-                                ((Cancellable) event).setCancelled(true);
+            list.register(new RegisteredListener(this, (listener, event1) -> {
+
+                if (event1 instanceof Cancellable) {
+                    if (event1 instanceof PlayerEvent) {
+                        if (shouldBeCanceled(((PlayerEvent) event1).getPlayer())) {
+                            ((Cancellable) event1).setCancelled(true);
+                        }
+                    } else if (event1 instanceof EntityEvent) {
+                        if (((EntityEvent) event1).getEntity() instanceof Player) {
+                            if (shouldBeCanceled((Player) ((EntityEvent) event1).getEntity())) {
+                                ((Cancellable) event1).setCancelled(true);
                             }
-                        } else if (event instanceof EntityEvent) {
-                            if (((EntityEvent) event).getEntity() instanceof Player) {
-                                if (shouldBeCanceled((Player) ((EntityEvent) event).getEntity())) {
-                                    ((Cancellable) event).setCancelled(true);
-                                }
-                            }
+                        }
+                    } else {
+                        // use fallback using the method cache
+                        PlayerMethod playerMethod = playerMethodCache.get(event1.getClass());
+                        if (playerMethod == null) return;
+
+                        Player player = playerMethod.invokeGetter(event1);
+                        if (shouldBeCanceled(player)) {
+                            ((Cancellable) event1).setCancelled(true);
                         }
                     }
                 }
+
             }, EventPriority.NORMAL, this, false));
         } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             getLogger().log(Level.SEVERE, "Couldn't register " + event.getSimpleName() + " because it doesn't have a valid handler list mehtod.");

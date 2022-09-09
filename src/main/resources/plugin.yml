@@ -1,4 +1,4 @@
-name: Require Oa
+name: RequireOa
 version: '${project.version}'
 main: com.craftmend.openaudiomc.addons.requieoa.RequireOpenAudioAddon
 api-version: 1.17
