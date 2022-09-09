@@ -3,6 +3,8 @@ A simple plugin blocking a configurable set of events when the player isn't conn
 
 Can be used to enforce/require voicechat or other audio related features.
 
+Spigot: https://www.spigotmc.org/resources/require-openaudiomc.105168/
+
 Default config:
 ```yaml
 # The following events will be canceled if the player isn't connected to voice chat, and the player
