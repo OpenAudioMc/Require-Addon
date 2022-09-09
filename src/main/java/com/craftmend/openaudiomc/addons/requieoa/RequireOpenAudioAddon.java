@@ -1,7 +1,8 @@
 package com.craftmend.openaudiomc.addons.requieoa;
 
 import com.craftmend.openaudiomc.api.interfaces.AudioApi;
-import com.craftmend.openaudiomc.generic.networking.client.objects.player.ClientConnection;
+import com.craftmend.openaudiomc.api.interfaces.Client;
+import com.craftmend.openaudiomc.generic.client.objects.ClientConnection;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.*;
@@ -19,6 +20,7 @@ import java.util.logging.Level;
 public final class RequireOpenAudioAddon extends JavaPlugin implements Listener {
 
     private Set<Class<?>> supportedTypes = new HashSet<>();
+    private boolean requireVc = false;
 
     @Override
     public void onEnable() {
@@ -39,13 +41,36 @@ public final class RequireOpenAudioAddon extends JavaPlugin implements Listener 
             }
         }
         getLogger().log(Level.INFO, "Hooked into " + loaded + " events");
+
+        requireVc = getConfig().getBoolean("require-voice-chat");
     }
 
     private boolean shouldBeCanceled(Player player) {
-        if (!AudioApi.getInstance().getClient(player.getUniqueId()).isConnected()) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&', getConfig().getString("message-when-canceled")));
+        Client client = AudioApi.getInstance().getClient(player.getUniqueId());
+        if (client == null) {
+            // wait for oa to init
             return true;
         }
+
+        if (requireVc) {
+            ClientConnection cc = (ClientConnection) client;
+            if (cc.getDataCache() == null) {
+                // still loading
+                return true;
+            }
+
+            if (!cc.getRtcSessionManager().isReady()) {
+                player.sendMessage(ChatColor.translateAlternateColorCodes('&', getConfig().getString("message-when-canceled")));
+                return true;
+            }
+        } else {
+            if (!client.isConnected()) {
+                player.sendMessage(ChatColor.translateAlternateColorCodes('&', getConfig().getString("message-when-canceled")));
+                return true;
+            }
+        }
+
+
         return false;
     }
 
