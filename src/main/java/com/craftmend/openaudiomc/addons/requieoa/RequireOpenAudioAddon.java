@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
 public final class RequireOpenAudioAddon extends JavaPlugin implements Listener {
@@ -24,6 +25,8 @@ public final class RequireOpenAudioAddon extends JavaPlugin implements Listener 
     private Map<Class, PlayerMethod> playerMethodCache = new HashMap<>();
     private Set<Class<?>> supportedTypes = new HashSet<>();
     private boolean requireVc = false;
+    private int ratelimit = 0;
+    private Map<Player, Long> lastMessage = new ConcurrentHashMap<>();
 
     @Override
     public void onEnable() {
@@ -32,6 +35,14 @@ public final class RequireOpenAudioAddon extends JavaPlugin implements Listener 
 
         supportedTypes.add(PlayerEvent.class);
         supportedTypes.add(EntityEvent.class);
+
+        ratelimit = getConfig().getInt("timeout-seconds");
+
+        // is it 0?
+        if (ratelimit == 0) {
+            ratelimit = 1;
+            getLogger().log(Level.WARNING, "Timeout seconds is set to 0, this is not allowed. Setting it to 1");
+        }
 
         int loaded = 0;
         for (String events : getConfig().getStringList("events")) {
@@ -46,12 +57,21 @@ public final class RequireOpenAudioAddon extends JavaPlugin implements Listener 
         getLogger().log(Level.INFO, "Hooked into " + loaded + " events");
 
         requireVc = getConfig().getBoolean("require-voice-chat");
+
+        getServer().getScheduler().scheduleAsyncRepeatingTask(this, () -> {
+            // evict old entries
+            lastMessage.entrySet().removeIf(entry -> entry.getValue() < System.currentTimeMillis() - (ratelimit * 1000));
+        }, 20, 20);
     }
 
     private boolean shouldBeCanceled(Player player) {
         Client client = AudioApi.getInstance().getClient(player.getUniqueId());
         if (client == null) {
             // wait for oa to init
+            return true;
+        }
+
+        if (checkRateLimit(player)) {
             return true;
         }
 
@@ -73,7 +93,17 @@ public final class RequireOpenAudioAddon extends JavaPlugin implements Listener 
             }
         }
 
+        return false;
+    }
 
+    private boolean checkRateLimit(Player player) {
+        if (lastMessage.containsKey(player)) {
+            // is it less than ratelimit seconds ago? then return true
+            if (lastMessage.get(player) > System.currentTimeMillis() - (ratelimit * 1000)) {
+                return true;
+            }
+        }
+        lastMessage.put(player, System.currentTimeMillis());
         return false;
     }
 

@@ -6,7 +6,7 @@
 
     <groupId>craftmend</groupId>
     <artifactId>require-oa</artifactId>
-    <version>1.1</version>
+    <version>1.2</version>
     <packaging>jar</packaging>
 
     <name>Require Oa</name>
@@ -76,8 +76,8 @@
 
         <dependency>
             <groupId>com.craftmend.openaudiomc</groupId>
-            <artifactId>OpenAudioMc</artifactId>
-            <version>6.7.4</version>
+            <artifactId>openaudiomc</artifactId>
+            <version>6.8.9</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
