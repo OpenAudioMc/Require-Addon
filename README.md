@@ -11,6 +11,7 @@ Default config:
 # will receive in game messages
 message-when-canceled: '&4You need to have the audio client open in order to do this (/audio)'
 require-voice-chat: true
+timeout-seconds: 5
 events:
   - 'org.bukkit.event.block.BlockBreakEvent'
   - 'org.bukkit.event.block.BlockPlaceEvent'
