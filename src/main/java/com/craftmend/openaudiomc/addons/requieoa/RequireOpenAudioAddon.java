@@ -25,6 +25,7 @@ public final class RequireOpenAudioAddon extends JavaPlugin implements Listener 
     private Set<Class<?>> supportedTypes = new HashSet<>();
     private boolean requireVc = false;
     private int ratelimit = 0;
+    private String bypassPermission = "requireoa.bypass";
     private Map<Player, Long> lastMessage = new ConcurrentHashMap<>();
 
     @Override
@@ -56,6 +57,7 @@ public final class RequireOpenAudioAddon extends JavaPlugin implements Listener 
         getLogger().log(Level.INFO, "Hooked into " + loaded + " events");
 
         requireVc = getConfig().getBoolean("require-voice-chat");
+        bypassPermission = getConfig().getString("bypass-permission", bypassPermission);
 
         getServer().getScheduler().scheduleAsyncRepeatingTask(this, () -> {
             // evict old entries
@@ -64,6 +66,10 @@ public final class RequireOpenAudioAddon extends JavaPlugin implements Listener 
     }
 
     private boolean shouldBeCanceled(Player player) {
+        if (player.hasPermission(bypassPermission)) {
+            return false;
+        }
+
         Client client = ClientApi.getInstance().getClient(player.getUniqueId());
         if (client == null) {
             // wait for oa to init

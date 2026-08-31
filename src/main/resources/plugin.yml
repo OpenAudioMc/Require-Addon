@@ -5,3 +5,7 @@ api-version: 1.17
 depend: [ OpenAudioMc ]
 authors: [ Mindgamesnl ]
 description: A simple plugin blocking player interaction, and kicking players if they don't connect to the audio client in time.
+permissions:
+  requireoa.bypass:
+    description: Exempts the player from the audio client requirement
+    default: op
