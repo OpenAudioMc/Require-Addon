@@ -64,6 +64,10 @@
             <id>sonatype</id>
             <url>https://oss.sonatype.org/content/groups/public/</url>
         </repository>
+        <repository>
+            <id>pixelib</id>
+            <url>https://repo.pixelib.dev/repository/mats-public</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -76,8 +80,8 @@
 
         <dependency>
             <groupId>com.craftmend.openaudiomc</groupId>
-            <artifactId>openaudiomc</artifactId>
-            <version>6.8.9</version>
+            <artifactId>openaudiomc-api</artifactId>
+            <version>6.10.18</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

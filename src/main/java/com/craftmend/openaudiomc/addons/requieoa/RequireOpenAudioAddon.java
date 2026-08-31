@@ -1,8 +1,7 @@
 package com.craftmend.openaudiomc.addons.requieoa;
 
-import com.craftmend.openaudiomc.api.interfaces.AudioApi;
-import com.craftmend.openaudiomc.api.interfaces.Client;
-import com.craftmend.openaudiomc.generic.client.objects.ClientConnection;
+import com.craftmend.openaudiomc.api.ClientApi;
+import com.craftmend.openaudiomc.api.clients.Client;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.*;
@@ -65,7 +64,7 @@ public final class RequireOpenAudioAddon extends JavaPlugin implements Listener 
     }
 
     private boolean shouldBeCanceled(Player player) {
-        Client client = AudioApi.getInstance().getClient(player.getUniqueId());
+        Client client = ClientApi.getInstance().getClient(player.getUniqueId());
         if (client == null) {
             // wait for oa to init
             return true;
@@ -75,25 +74,12 @@ public final class RequireOpenAudioAddon extends JavaPlugin implements Listener 
             return true;
         }
 
-        if (requireVc) {
-            ClientConnection cc = (ClientConnection) client;
-            if (cc.getDataCache() == null) {
-                // still loading
-                return true;
-            }
-
-            if (!cc.getRtcSessionManager().isReady()) {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&', getConfig().getString("message-when-canceled")));
-                return true;
-            }
-        } else {
-            if (!client.isConnected()) {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&', getConfig().getString("message-when-canceled")));
-                return true;
-            }
+        if (requireVc ? client.hasVoicechatEnabled() : client.isConnected()) {
+            return false;
         }
 
-        return false;
+        player.sendMessage(ChatColor.translateAlternateColorCodes('&', getConfig().getString("message-when-canceled")));
+        return true;
     }
 
     private boolean checkRateLimit(Player player) {
